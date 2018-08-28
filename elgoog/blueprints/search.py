@@ -21,9 +21,9 @@ def search():
     start = data.get('start')
     timestamp = data.get('timestamp')
     nonce = data.get('nonce')
-    token = data.get('token')
+    signature = data.get('signature')
 
-    if not defender.verify(query, start, timestamp, nonce, token):
+    if not defender.verify(query, start, timestamp, nonce, signature):
         return abort(403)
 
     headers = config.default_headers
@@ -31,8 +31,7 @@ def search():
     url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), start)
     resp = requests.get(url, verify=False, timeout=10)
     resp_headers = remove_invalid_response_headers(dict(resp.headers))
-
-    return Response(response=resp.text, status=200, headers=resp_headers)
+    return Response(response=resp.content, status=200, headers=resp_headers)
 
 
 def remove_invalid_response_headers(headers):
