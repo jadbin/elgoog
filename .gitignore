@@ -1,0 +1,12 @@
+*~
+.DS_Store
+*.pyc
+.cache
+*egg-info
+build
+dist
+.coverage
+.idea
+
+.log
+.pid
