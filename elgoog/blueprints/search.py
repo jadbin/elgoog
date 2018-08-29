@@ -57,9 +57,15 @@ def search():
             else:
                 headers['Referer'] = 'https://www.search.ask.com/'
             url = 'https://www.search.ask.com/web?q={}&page={}'.format(quote(query), page + 1)
+        elif engine == 'Bing':
+            if page > 0:
+                headers['Referer'] = 'https://www.bing.com/search?q={}'.format(quote(query))
+            else:
+                headers['Referer'] = 'https://www.bing.com/'
+            url = 'https://www.bing.com/search?q={}&first={}'.format(quote(query), page * 10 + 1)
         else:
             return abort(400)
-        resp = requests.get(url, verify=False, timeout=5, headers=headers)
+        resp = requests.get(url, verify=False, timeout=4, headers=headers)
         res = parse_results(engine, resp.text)
         cache.update((query, page, engine), res)
 
@@ -117,6 +123,19 @@ def parse_results(engine, text):
                 if len(span) > 0:
                     text = span[0].text.strip()
                 url = item.css('a.algo-title')[0].attr('href').strip()
+                if text is not None:
+                    res.append({'title': title, 'text': text, 'url': url})
+            except Exception:
+                pass
+    elif engine == 'Bing':
+        for item in selector.css('li.b_algo'):
+            try:
+                title = item.css('h2>a')[0].text.strip()
+                text = None
+                span = item.css('div.b_caption>p')
+                if len(span) > 0:
+                    text = span[0].text.strip()
+                url = item.css('h2>a')[0].attr('href').strip()
                 if text is not None:
                     res.append({'title': title, 'text': text, 'url': url})
             except Exception:
