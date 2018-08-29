@@ -69,7 +69,7 @@ def random_user_agent():
             'Chrome/{} Safari/{}').format(os, webkit, chrome_version, webkit)
 
 
-yahoo_url_reg = re.compile(r'/RU=(.+)/')
+yahoo_url_reg = re.compile(r'/RU=(.+?)/')
 
 
 def parse_results(engine, text):
