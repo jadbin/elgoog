@@ -26,23 +26,35 @@ def search():
     timestamp = data.get('timestamp')
     nonce = data.get('nonce')
     signature = data.get('signature')
+    engine = data.get('engine')
+    if engine is None:
+        engine = 'Google'
 
     success, message = defender.verify(query, page, timestamp, nonce, signature)
     if not success:
         return abort(403, message)
 
-    res = cache.get(query, page)
+    res = cache.get((query, page, engine))
     if res is None:
         headers = config.default_headers
         headers['User-Agent'] = random_user_agent()
-        if page > 0:
-            headers['Referer'] = 'https://www.google.com.hk/search?q={}'.format(quote(query))
+        if engine == 'Google':
+            if page > 0:
+                headers['Referer'] = 'https://www.google.com.hk/search?q={}'.format(quote(query))
+            else:
+                headers['Referer'] = 'https://www.google.com.hk/'
+            url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), page * 10)
+        elif engine == 'Yahoo':
+            if page > 0:
+                headers['Referer'] = 'https://hk.search.yahoo.com/search?p={}'.format(quote(query))
+            else:
+                headers['Referer'] = 'https://hk.search.yahoo.com/'
+            url = 'https://hk.search.yahoo.com/search?p={}&b={}'.format(quote(query), page * 10 + 1)
         else:
-            headers['Referer'] = 'https://www.google.com.hk/'
-        url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), page * 10)
+            return abort(400)
         resp = requests.get(url, verify=False, timeout=5, headers=headers)
-        res = parse_results(resp.text)
-        cache.update(query, page, res)
+        res = parse_results(engine, resp.text)
+        cache.update((query, page, engine), res)
 
     return jsonify(res)
 
@@ -56,19 +68,33 @@ def random_user_agent():
             'Chrome/{} Safari/{}').format(os, webkit, chrome_version, webkit)
 
 
-def parse_results(text):
+def parse_results(engine, text):
     res = []
     selector = Selector(text)
-    for item in selector.css('div.g'):
-        try:
-            title = item.css('h3>a')[0].text.strip()
-            text = None
-            span_st = item.css('span.st')
-            if len(span_st) > 0:
-                text = span_st[0].text.strip()
-            url = item.css('h3>a')[0].attr('href').strip()
-            if text is not None:
-                res.append({'title': title, 'text': text, 'url': url})
-        except Exception:
-            pass
+    if engine == 'Google':
+        for item in selector.css('div.g'):
+            try:
+                title = item.css('h3>a')[0].text.strip()
+                text = None
+                span_st = item.css('span.st')
+                if len(span_st) > 0:
+                    text = span_st[0].text.strip()
+                url = item.css('h3>a')[0].attr('href').strip()
+                if text is not None:
+                    res.append({'title': title, 'text': text, 'url': url})
+            except Exception:
+                pass
+    elif engine == 'Yahoo':
+        for item in selector.css('div.algo-sr'):
+            try:
+                title = item.css('h3>a')[0].text.strip()
+                text = None
+                p_lh_l = item.css('p.lh-l')
+                if len(p_lh_l) > 0:
+                    text = p_lh_l[0].text.strip()
+                url = item.css('h3>a')[0].attr('href').strip()
+                if text is not None:
+                    res.append({'title': title, 'text': text, 'url': url})
+            except Exception:
+                pass
     return res

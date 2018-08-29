@@ -10,15 +10,13 @@ class MemCache:
         self.queue = deque()
         self.cache = {}
 
-    def get(self, query, start):
+    def get(self, k):
         self._check()
-        k = (query, start)
         if k in self.cache:
             return self.cache[k]
 
-    def update(self, query, start, resp):
+    def update(self, k, resp):
         self._check()
-        k = (query, start)
         if k not in self.cache:
             t = int(time.time())
             self.cache[k] = resp
