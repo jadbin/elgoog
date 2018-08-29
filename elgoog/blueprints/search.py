@@ -4,7 +4,9 @@ import random
 from urllib.parse import quote
 
 import requests
-from flask import Blueprint, request, abort, Response
+from flask import Blueprint, request, abort, jsonify
+
+from xpaw import Selector
 
 from elgoog import config
 from elgoog.defender import Defender
@@ -29,23 +31,16 @@ def search():
     if not success:
         return abort(403, message)
 
-    resp = cache.get(query, start)
-    if resp is None:
+    res = cache.get(query, start)
+    if res is None:
         headers = config.default_headers
         headers['User-Agent'] = random_user_agent()
         url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), start)
         resp = requests.get(url, verify=False, timeout=5, headers=headers)
-        cache.update(query, start, resp)
+        res = parse_results(resp.text)
+        cache.update(query, start, res)
 
-    resp_headers = remove_invalid_response_headers(dict(resp.headers))
-    return Response(response=resp.content, status=200, headers=resp_headers)
-
-
-def remove_invalid_response_headers(headers):
-    for i in config.invalid_response_headers:
-        if i in headers:
-            del headers[i]
-    return headers
+    return jsonify(res)
 
 
 def random_user_agent():
@@ -55,3 +50,18 @@ def random_user_agent():
     os = 'Macintosh; Intel Mac OS X 10_10_4'
     return ('Mozilla/5.0 ({}) AppleWebKit/{} (KHTML, like Gecko) '
             'Chrome/{} Safari/{}').format(os, webkit, chrome_version, webkit)
+
+
+def parse_results(text):
+    res = []
+    selector = Selector(text)
+    for item in selector.css('div.g'):
+        title = item.css('h3.r>a')[0].text.strip()
+        text = None
+        span_st = item.css('span.st')
+        if len(span_st) > 0:
+            text = span_st[0].text.strip()
+        url = item.css('h3.r>a')[0].attr('href').strip()
+        if text is not None:
+            res.append({'title': title, 'text': text, 'url': url})
+    return res
