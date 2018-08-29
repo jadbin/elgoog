@@ -22,23 +22,27 @@ cache = MemCache()
 def search():
     data = request.get_json()
     query = data.get('query')
-    start = data.get('start')
+    page = data.get('page')
     timestamp = data.get('timestamp')
     nonce = data.get('nonce')
     signature = data.get('signature')
 
-    success, message = defender.verify(query, start, timestamp, nonce, signature)
+    success, message = defender.verify(query, page, timestamp, nonce, signature)
     if not success:
         return abort(403, message)
 
-    res = cache.get(query, start)
+    res = cache.get(query, page)
     if res is None:
         headers = config.default_headers
         headers['User-Agent'] = random_user_agent()
-        url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), start)
+        if page > 0:
+            headers['Referer'] = 'https://www.google.com.hk/search?q={}'.format(quote(query))
+        else:
+            headers['Referer'] = 'https://www.google.com.hk/'
+        url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), page * 10)
         resp = requests.get(url, verify=False, timeout=5, headers=headers)
         res = parse_results(resp.text)
-        cache.update(query, start, res)
+        cache.update(query, page, res)
 
     return jsonify(res)
 

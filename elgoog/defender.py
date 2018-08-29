@@ -10,9 +10,9 @@ class Defender:
     def __init__(self, timestamp_interval=600):
         self.timestamp_interval = timestamp_interval
 
-    def verify(self, query, start, timestamp, nonce, signature):
+    def verify(self, query, page, timestamp, nonce, signature):
         t = int(time.time())
-        s = query + str(start) + str(timestamp) + str(nonce) + config.elgoog_token
+        s = query + str(page) + str(timestamp) + str(nonce) + config.elgoog_token
         h = hashlib.sha256(s.encode('utf-8')).hexdigest()
         if h != signature:
             return False, 'Bad signature'
