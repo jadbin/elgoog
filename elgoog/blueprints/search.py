@@ -1,7 +1,8 @@
 # coding=utf-8
 
 import random
-from urllib.parse import quote
+from urllib.parse import quote, unquote
+import re
 
 import requests
 from flask import Blueprint, request, abort, jsonify
@@ -68,6 +69,9 @@ def random_user_agent():
             'Chrome/{} Safari/{}').format(os, webkit, chrome_version, webkit)
 
 
+yahoo_url_reg = re.compile(r'/RU=(.+)/')
+
+
 def parse_results(engine, text):
     res = []
     selector = Selector(text)
@@ -93,6 +97,7 @@ def parse_results(engine, text):
                 if len(p_lh_l) > 0:
                     text = p_lh_l[0].text.strip()
                 url = item.css('h3>a')[0].attr('href').strip()
+                url = unquote(yahoo_url_reg.search(url).group(1))
                 if text is not None:
                     res.append({'title': title, 'text': text, 'url': url})
             except Exception:
