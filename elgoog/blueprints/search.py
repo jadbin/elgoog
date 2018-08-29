@@ -51,6 +51,12 @@ def search():
             else:
                 headers['Referer'] = 'https://hk.search.yahoo.com/'
             url = 'https://hk.search.yahoo.com/search?p={}&b={}'.format(quote(query), page * 10 + 1)
+        elif engine == 'Ask':
+            if page > 0:
+                headers['Referer'] = 'https://www.search.ask.com/web?q={}'.format(quote(query))
+            else:
+                headers['Referer'] = 'https://www.search.ask.com/'
+            url = 'https://www.search.ask.com/web?q={}&page={}'.format(quote(query), page + 1)
         else:
             return abort(400)
         resp = requests.get(url, verify=False, timeout=5, headers=headers)
@@ -97,6 +103,20 @@ def parse_results(engine, text):
                 if len(p_lh_l) > 0:
                     text = p_lh_l[0].text.strip()
                 url = item.css('h3>a')[0].attr('href').strip()
+                url = unquote(yahoo_url_reg.search(url).group(1))
+                if text is not None:
+                    res.append({'title': title, 'text': text, 'url': url})
+            except Exception:
+                pass
+    elif engine == 'Ask':
+        for item in selector.css('li.algo-result'):
+            try:
+                title = item.css('a.algo-title')[0].text.strip()
+                text = None
+                span = item.css('span.algo-summary')
+                if len(span) > 0:
+                    text = span[0].text.strip()
+                url = item.css('a.algo-title')[0].attr('href').strip()
                 url = unquote(yahoo_url_reg.search(url).group(1))
                 if text is not None:
                     res.append({'title': title, 'text': text, 'url': url})
