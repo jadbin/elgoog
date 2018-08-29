@@ -19,7 +19,9 @@ class Defender:
         while len(self.queue) > 0:
             if t - self.queue[0][0] < self.defense_interval:
                 break
-            self.queue.popleft()
+            o = self.queue.popleft()
+            if o[1] in self.replay:
+                self.replay.remove(o[1])
         s = query + str(start) + str(timestamp) + str(nonce) + config.elgoog_token
         h = hashlib.sha256(s.encode('utf-8')).hexdigest()
         if h != signature:
@@ -29,6 +31,10 @@ class Defender:
         x = (timestamp, nonce)
         if x in self.replay:
             return False, 'Replay attack, timestamp={}, nonce={}'.format(timestamp, nonce)
+        return True, ''
+
+    def record(self, timestamp, nonce):
+        t = int(time.time())
+        x = (timestamp, nonce)
         self.queue.append((t, x))
         self.replay.add(x)
-        return True, ''

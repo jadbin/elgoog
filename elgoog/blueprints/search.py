@@ -32,6 +32,9 @@ def search():
     url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), start)
     resp = requests.get(url, verify=False, timeout=5, headers=headers)
     resp_headers = remove_invalid_response_headers(dict(resp.headers))
+
+    defender.record(timestamp, nonce)
+
     return Response(response=resp.content, status=200, headers=resp_headers)
 
 
