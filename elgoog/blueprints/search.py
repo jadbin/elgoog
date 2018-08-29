@@ -8,10 +8,12 @@ from flask import Blueprint, request, abort, Response
 
 from elgoog import config
 from elgoog.defender import Defender
+from elgoog.cache import MemCache
 
 search_blueprint = Blueprint('search', __name__)
 
 defender = Defender()
+cache = MemCache()
 
 
 @search_blueprint.route('/search', methods=['POST'])
@@ -27,10 +29,14 @@ def search():
     if not success:
         return abort(403, message)
 
-    headers = config.default_headers
-    headers['User-Agent'] = random_user_agent()
-    url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), start)
-    resp = requests.get(url, verify=False, timeout=5, headers=headers)
+    resp = cache.get(query, start)
+    if resp is None:
+        headers = config.default_headers
+        headers['User-Agent'] = random_user_agent()
+        url = 'https://www.google.com.hk/search?q={}&start={}'.format(quote(query), start)
+        resp = requests.get(url, verify=False, timeout=5, headers=headers)
+        cache.update(query, start, resp)
+
     resp_headers = remove_invalid_response_headers(dict(resp.headers))
     return Response(response=resp.content, status=200, headers=resp_headers)
 
