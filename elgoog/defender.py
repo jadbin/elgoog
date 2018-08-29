@@ -23,12 +23,12 @@ class Defender:
         s = query + str(start) + str(timestamp) + str(nonce) + config.elgoog_token
         h = hashlib.sha256(s.encode('utf-8')).hexdigest()
         if h != signature:
-            return False
+            return False, 'Bad signature'
         if abs(t - timestamp) > self.timestamp_interval:
-            return False
+            return False, 'Bad timestamp, timestamp={}, local timestamp={}'.format(timestamp, t)
         x = (timestamp, nonce)
         if x in self.replay:
-            return False
+            return False, 'Replay attack, timestamp={}, nonce={}'.format(timestamp, nonce)
         self.queue.append((t, x))
         self.replay.add(x)
-        return True
+        return True, ''
