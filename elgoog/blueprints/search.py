@@ -117,7 +117,6 @@ def parse_results(engine, text):
                 if len(span) > 0:
                     text = span[0].text.strip()
                 url = item.css('a.algo-title')[0].attr('href').strip()
-                url = unquote(yahoo_url_reg.search(url).group(1))
                 if text is not None:
                     res.append({'title': title, 'text': text, 'url': url})
             except Exception:
