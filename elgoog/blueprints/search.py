@@ -56,12 +56,15 @@ def parse_results(text):
     res = []
     selector = Selector(text)
     for item in selector.css('div.g'):
-        title = item.css('h3.r>a')[0].text.strip()
-        text = None
-        span_st = item.css('span.st')
-        if len(span_st) > 0:
-            text = span_st[0].text.strip()
-        url = item.css('h3.r>a')[0].attr('href').strip()
-        if text is not None:
-            res.append({'title': title, 'text': text, 'url': url})
+        try:
+            title = item.css('h3>a')[0].text.strip()
+            text = None
+            span_st = item.css('span.st')
+            if len(span_st) > 0:
+                text = span_st[0].text.strip()
+            url = item.css('h3>a')[0].attr('href').strip()
+            if text is not None:
+                res.append({'title': title, 'text': text, 'url': url})
+        except Exception:
+            pass
     return res
