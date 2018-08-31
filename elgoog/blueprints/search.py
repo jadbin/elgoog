@@ -12,6 +12,7 @@ from xpaw import Selector
 from elgoog import config
 from elgoog.defender import Defender
 from elgoog.cache import MemCache
+from elgoog.errors import ServiceBanError
 
 search_blueprint = Blueprint('search', __name__)
 
@@ -66,7 +67,10 @@ def search():
         else:
             return abort(400)
         resp = requests.get(url, verify=False, timeout=4, headers=headers)
-        res = parse_results(engine, resp.text)
+        try:
+            res = parse_results(engine, resp)
+        except ServiceBanError:
+            return abort(503)
         cache.update((query, page, engine), res)
 
     return jsonify(res)
@@ -84,10 +88,13 @@ def random_user_agent():
 yahoo_url_reg = re.compile(r'/RU=(.+?)/')
 
 
-def parse_results(engine, text):
+def parse_results(engine, resp):
     res = []
-    selector = Selector(text)
+    selector = Selector(resp.text)
     if engine == 'Google':
+        if 'google.com.hk/sorry/' in resp.url:
+            raise ServiceBanError
+
         for item in selector.css('div.g'):
             try:
                 title = item.css('h3>a')[0].text.strip()
