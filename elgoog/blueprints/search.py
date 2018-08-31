@@ -70,7 +70,7 @@ def search():
         try:
             res = parse_results(engine, resp)
         except ServiceBanError:
-            return abort(503)
+            return abort(593)
         cache.update((query, page, engine), res)
 
     return jsonify(res)
