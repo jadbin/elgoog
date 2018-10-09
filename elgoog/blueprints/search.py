@@ -68,6 +68,8 @@ def search():
             return abort(400)
         resp = requests.get(url, verify=False, timeout=4, headers=headers)
         try:
+            if resp.status_code / 100 != 2:
+                raise ServiceBanError
             res = parse_results(engine, resp)
         except ServiceBanError:
             return abort(593)

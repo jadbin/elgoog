@@ -11,7 +11,7 @@ from elgoog import utils
 from elgoog import config
 
 
-def set_params(app):
+def set_config(app):
     home_dir = os.environ.get('ELGOOG_HOME')
     if home_dir is None:
         home_dir = dirname(dirname(__file__))
@@ -26,7 +26,7 @@ def create_app():
     app = Flask(__name__)
 
     CORS(app)
-    set_params(app)
+    set_config(app)
     register_blueprints(app)
 
     return app
