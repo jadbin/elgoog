@@ -5,7 +5,7 @@ from urllib.parse import quote, unquote
 import re
 
 import requests
-from flask import Blueprint, request, abort, jsonify
+from flask import Blueprint, request, abort, jsonify, Response
 
 from xpaw import Selector
 
@@ -72,7 +72,7 @@ def search():
                 raise ServiceBanError
             res = parse_results(engine, resp)
         except ServiceBanError:
-            return abort(593)
+            return Response(status=593)
         cache.update((query, page, engine), res)
 
     return jsonify(res)
