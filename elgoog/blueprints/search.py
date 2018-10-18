@@ -96,19 +96,22 @@ def parse_results(engine, resp):
     if engine == 'Google':
         if 'google.com.hk/sorry/' in resp.url:
             raise ServiceBanError
-
-        for item in selector.css('div.g'):
-            try:
-                title = item.css('h3')[0].text.strip()
-                text = None
-                span_st = item.css('span.st')
-                if len(span_st) > 0:
-                    text = span_st[0].text.strip()
-                url = item.css('div.r>a')[0].attr('href').strip()
-                if text is not None:
-                    res.append({'title': title, 'text': text, 'url': url})
-            except Exception:
-                pass
+        topstuff = selector.css('#topstuff').text
+        if len(topstuff) > 0 and '未找到符合' in topstuff[0]:
+            pass
+        else:
+            for item in selector.css('div.g'):
+                try:
+                    title = item.css('h3')[0].text.strip()
+                    text = None
+                    span_st = item.css('span.st')
+                    if len(span_st) > 0:
+                        text = span_st[0].text.strip()
+                    url = item.css('div.r>a')[0].attr('href').strip()
+                    if text is not None:
+                        res.append({'title': title, 'text': text, 'url': url})
+                except Exception:
+                    pass
     elif engine == 'Yahoo':
         for item in selector.css('div.algo-sr'):
             try:
